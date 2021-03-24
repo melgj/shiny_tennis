@@ -32,20 +32,21 @@ ui <- fluidPage(
     titlePanel(
         h1("Tennis Head to Head", align = "left")),
     
-    fluidRow(
-        column(4, 
-               dateRangeInput("dates", h4("Date Range"), start = "2000-01-01"),
-               h4("Select Players"),
-               selectInput(inputId = "player1", label = "Player 1", choices = playerList, selected = playerList[[1]]),
-               selectInput(inputId = "player2", label = "Player 2", choices = playerList, selected = playerList[[2]]))),
-    fluidRow(
-        column(4,
-               h4("Get Elo Win Probabilities"),
-               actionButton("winProb", "Predict"))),
-    
-    fluidRow(
-    column(4, offset = 3,
-           dataTableOutput("h2h")))
+    sidebarLayout(
+        sidebarPanel(
+            fluidRow(
+                dateRangeInput("dates", h4("Date Range"), start = "2000-01-01"),
+                h4("Select Players"),
+                selectInput(inputId = "player1", label = "Player 1", choices = playerList, selected = playerList[[1]]),
+                selectInput(inputId = "player2", label = "Player 2", choices = playerList, selected = playerList[[2]])),
+            fluidRow(
+                h4("Get Elo Win Probabilities"),
+                actionButton("winProb", "Predict"))),
+        mainPanel(
+            fluidRow(
+                column(8,
+                dataTableOutput("h2h"))))
+    )
 )
 
 # Define server logic required to draw a histogram
