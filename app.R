@@ -15,8 +15,9 @@ library(data.table)
 matches <- fread("matches.csv")
 matches$tourney_date <- lubridate::ymd(matches$tourney_date)
 matches$year <- lubridate::year(matches$tourney_date)
+matches
 matches <- matches %>% 
-    select(year, tourney_date, tourney_name, round, best_of, winner_name, loser_name, score) %>%
+    select(year, tourney_date, tourney_name, surface, round, best_of, winner_name, loser_name, score) %>%
     filter(year >= 2000) %>% 
     arrange(desc(tourney_date))
 matches
@@ -44,7 +45,7 @@ ui <- fluidPage(
                 actionButton("winProb", "Predict"))),
         mainPanel(
             fluidRow(
-                column(8,
+                column(10,
                 dataTableOutput("h2h"))))
     )
 )
