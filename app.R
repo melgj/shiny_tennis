@@ -35,18 +35,15 @@ ui <- fluidPage(
     
     sidebarLayout(
         sidebarPanel(
-            fluidRow(
                 dateRangeInput("dates", h4("Date Range"), start = "2000-01-01"),
                 h4("Select Players"),
                 selectInput(inputId = "player1", label = "Player 1", choices = playerList, selected = playerList[[1]]),
-                selectInput(inputId = "player2", label = "Player 2", choices = playerList, selected = playerList[[2]])),
-            fluidRow(
+                selectInput(inputId = "player2", label = "Player 2", choices = playerList, selected = playerList[[2]]),
                 h4("Get Elo Win Probabilities"),
-                actionButton("winProb", "Predict"))),
+                actionButton("winProb", "Predict")),
         mainPanel(
-            fluidRow(
-                column(10,
-                dataTableOutput("h2h"))))
+            column(10,
+            dataTableOutput("h2h")))
     )
 )
 
