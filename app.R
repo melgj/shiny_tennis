@@ -41,7 +41,7 @@ ui <- fluidPage(
                 selectInput(inputId = "player2", label = "Player 2", 
                             choices = playerList, selected = playerList[[2]]),
                 h4("Calculate Elo Win Probabilities"),
-                actionButton("winProb", "PREDICT"),
+                actionButton("winProb", "CALCULATE"),
                 tableOutput("preds")),
         mainPanel(
             column(10,
@@ -67,7 +67,10 @@ server <- function(input, output) {
     output$h2h <- renderDataTable({
         matches %>% dplyr::filter((winner_name == input$player1 & loser_name == input$player2) |
                                       (loser_name == input$player1 & winner_name == input$player2)) %>% 
-            dplyr::filter(dplyr::between(tourney_date, input$dates[1], input$dates[2]))
+            dplyr::filter(dplyr::between(tourney_date, input$dates[1], input$dates[2])) %>% 
+            dplyr::rename(Match_Score = score,
+                          Winner = winner_name,
+                          Loser = loser_name)
     })
     
     data <- eventReactive(input$winProb,{
