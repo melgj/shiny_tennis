@@ -5,18 +5,16 @@ library(shinythemes)
 library(dplyr)
 
 
-matches <- fread("matches.csv")
+matches <- fread("atp_matches.csv")
 matches$tourney_date <- lubridate::ymd(matches$tourney_date)
 matches$year <- lubridate::year(matches$tourney_date)
 
 matches <- matches %>% 
     select(year, tourney_date, tourney_name, surface, round, best_of, winner_name, loser_name, score) %>%
-    filter(year >= 2000) %>% 
     arrange(desc(tourney_date))
 
-ratings <- fread("ratings.csv")
+ratings <- fread("atp_ratings.csv")
 ratings <- ratings %>%
-    dplyr::filter(Lag <= 50) %>%
     dplyr::select(Player, Rating) %>% 
     dplyr::arrange(Player)
 
