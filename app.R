@@ -37,9 +37,9 @@ ui <- fluidPage(
                 dateRangeInput("dates", h4("Date Range Head-to-Head"), start = "2000-01-01"),
                 h4("Select Players"),
                 selectInput(inputId = "player1", label = "Player 1", 
-                            choices = c("Select Player" = "", playerList), selected = NULL),
+                            choices = playerList, selected = playerList[[1]]),
                 selectInput(inputId = "player2", label = "Player 2", 
-                            choices = c("Select Player" = "", playerList), selected = NULL),
+                            choices = playerList, selected = playerList[[2]]),
                 h4("Calculate Elo Win Probabilities"),
                 actionButton("winProb", "PREDICT"),
                 tableOutput("preds")),
@@ -55,14 +55,11 @@ ui <- fluidPage(
 
 server <- function(input, output) {
     output$winLoss <- renderTable({
-        matches %>% dplyr::filter((winner_name == input$player1 & loser_name == input$player2) |
-                                      (loser_name == input$player1 & winner_name == input$player2)) %>% 
-            dplyr::filter(dplyr::between(tourney_date, input$dates[1], input$dates[2])) %>% 
-            dplyr::group_by(winner_name) %>% 
-            dplyr::summarise(Wins = n()) %>% 
-            dplyr::rename(Player = winner_name) %>% 
-            dplyr::arrange(desc(Wins)) %>% 
-            dplyr::ungroup()
+        data.table(Player = c(input$player1, input$player2),
+                   Wins = c(sum(matches$winner_name == input$player1 & matches$loser_name == input$player2),
+                            sum(matches$winner_name == input$player2 & matches$loser_name == input$player1)))[
+                                order(-Wins)]
+        
     })
     output$h2h <- renderDataTable({
         matches %>% dplyr::filter((winner_name == input$player1 & loser_name == input$player2) |
