@@ -1,4 +1,4 @@
-#
+
 library(data.table)
 library(shiny)
 library(shinythemes)
@@ -25,11 +25,10 @@ probP1 <- function(p1_rtng, p2_rtng){
     return(1 / (1 + 10 ^ (dij/400)))
 }
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
     theme = shinytheme("cerulean"),
 
-    # Application title
+ 
     titlePanel(
         h1("Tennis Head-to-Head", align = "left")),
     
@@ -53,7 +52,7 @@ ui <- fluidPage(
     )
 )
 
-# Define server logic required to draw a histogram
+
 server <- function(input, output) {
     output$winLoss <- renderTable({
         matches %>% dplyr::filter((winner_name == input$player1 & loser_name == input$player2) |
