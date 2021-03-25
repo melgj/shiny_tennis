@@ -1,29 +1,31 @@
 #
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
+library(data.table)
 library(shiny)
 library(shinythemes)
 library(dplyr)
-library(data.table)
+
 
 matches <- fread("matches.csv")
 matches$tourney_date <- lubridate::ymd(matches$tourney_date)
 matches$year <- lubridate::year(matches$tourney_date)
-matches
+
 matches <- matches %>% 
     select(year, tourney_date, tourney_name, surface, round, best_of, winner_name, loser_name, score) %>%
     filter(year >= 2000) %>% 
     arrange(desc(tourney_date))
-matches
+
 ratings <- fread("ratings.csv")
-ratings <- ratings %>% arrange(Player)
+ratings <- ratings %>%
+    dplyr::filter(Lag <= 50) %>%
+    dplyr::select(Player, Rating) %>% 
+    dplyr::arrange(Player)
+
 playerList <- ratings$Player
+
+probP1 <- function(p1_rtng, p2_rtng){
+    dij <- p2_rtng - p1_rtng
+    return(1 / (1 + 10 ^ (dij/400)))
+}
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -40,10 +42,11 @@ ui <- fluidPage(
                 selectInput(inputId = "player1", label = "Player 1", choices = playerList, selected = playerList[[1]]),
                 selectInput(inputId = "player2", label = "Player 2", choices = playerList, selected = playerList[[2]]),
                 h4("Get Elo Win Probabilities"),
-                actionButton("winProb", "Predict")),
+                actionButton("winProb", "Predict"),
+                tableOutput("preds")),
         mainPanel(
             column(10,
-            dataTableOutput("h2h")))
+                   dataTableOutput("h2h")))
     )
 )
 
@@ -53,6 +56,23 @@ server <- function(input, output) {
         matches %>% dplyr::filter((winner_name == input$player1 & loser_name == input$player2) |
                                       (loser_name == input$player1 & winner_name == input$player2)) %>% 
             filter(dplyr::between(tourney_date, input$dates[1], input$dates[2]))
+    })
+    
+    data <- eventReactive(input$winProb,{
+    
+                p1Elo <- round(ratings$Rating[ratings$Player == input$player1],2)
+                p2Elo <- round(ratings$Rating[ratings$Player == input$player2],2)
+                
+                p1Prob <- probP1(p1Elo, p2Elo)
+                p2Prob <- 1 - p1Prob
+                
+                probTable <- data.table(Player = c(input$player1, input$player2),
+                                        `Elo Rating` = c(p1Elo, p2Elo),
+                                        `Win Probability` = c(p1Prob, p2Prob))
+    })
+    
+    output$preds <- renderTable({
+        data()
     })
 }
 
