@@ -55,10 +55,13 @@ ui <- fluidPage(
 
 server <- function(input, output) {
     output$winLoss <- renderTable({
-        data.table(Player = c(input$player1, input$player2),
-                   Wins = c(sum(matches$winner_name == input$player1 & matches$loser_name == input$player2),
-                            sum(matches$winner_name == input$player2 & matches$loser_name == input$player1)))[
-                                order(-Wins)]
+        matches %>% dplyr::filter((winner_name == input$player1 & loser_name == input$player2) |
+                                      (loser_name == input$player1 & winner_name == input$player2)) %>% 
+            dplyr::filter(dplyr::between(tourney_date, input$dates[1], input$dates[2])) %>% 
+            group_by(winner_name) %>% 
+            summarise(Wins = n()) %>% 
+            rename(Player = winner_name) %>% 
+            arrange(desc(Wins))
         
     })
     output$h2h <- renderDataTable({
