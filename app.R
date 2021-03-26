@@ -5,6 +5,9 @@ library(dplyr)
 library(readr)
 library(PlayerRatings)
 library(lubridate)
+library(reshape2)
+library(ggplot2)
+library(plotly)
 
 
 matches <- read_csv("atp_matches.csv")
@@ -41,16 +44,28 @@ match_hist <- matches %>%
 sElo <- steph(match_hist, init = c(1500,300), history = TRUE)
 
 ratings <- as_tibble(sElo$ratings) %>% 
-    filter(Lag <= 25, Rating >= 1500, Games >= 30)
-
-ratings
+    filter(Lag <= 25, Rating >= 1500, Games >= 30) %>% 
+    arrange(Player)
 
 playerList <- ratings$Player
+
+# Elo Player Timeline for plotting
+
+timeline <- as_tibble(sElo$history, rownames = "Player")
+
+timeline <- timeline %>% 
+    filter(Player %in% playerList) %>% 
+    select(Player, ends_with("Rating")) %>% 
+    select(Player, last_col(offset = 99):last_col())
+
+eloTl <- melt(timeline, id.vars = "Player",variable.name = "Time", 
+             value.name = "Rating")
+
+# Build UI
 
 ui <- fluidPage(
     theme = shinytheme("cerulean"),
 
- 
     titlePanel(
         h1("Tennis Head-to-Head", align = "left")),
     
@@ -63,6 +78,8 @@ ui <- fluidPage(
                             choices = playerList, selected = playerList[[1]]),
                 selectInput(inputId = "player2", label = "Player 2", 
                             choices = playerList, selected = playerList[[2]]),
+                h4("Elo Timeline"),
+                plotOutput("tPlot"),
                 h4("Calculate Elo Win Probabilities"),
                 actionButton("winProb", "CALCULATE"),
                 tableOutput("preds")),
@@ -78,6 +95,7 @@ ui <- fluidPage(
     tags$footer(h6("Match data sourced from Jeff Sackmann Tennis Abstract https://github.com/JeffSackmann"))
 )
 
+# Build server function
 
 server <- function(input, output) {
     output$winLoss <- renderTable({
@@ -105,13 +123,33 @@ server <- function(input, output) {
         
         predProb <- predict(sElo, matchup, trat = c(1500, 300), gamma = 0)
         
+        plyr1Elo <- ratings$Rating[ratings$Player == input$player1]
+        plyr2Elo <- ratings$Rating[ratings$Player == input$player2]
+        
         matchPred <- tibble(Player = c(input$player1, input$player2),
-                                `Win Probability` = c(round(predProb, 2), round(1 - predProb, 2)))
+                            Elo = c(plyr1Elo, plyr2Elo),
+                            `Win Probability` = c(round(predProb, 2), round(1 - predProb, 2)))
                 
     })
     
     output$preds <- renderTable({
         data()
+    })
+    
+    output$tPlot <- renderPlot({
+        eloTl %>% filter(Player %in% c(input$player1, input$player2)) %>% 
+            ggplot(aes(x = Time,
+                   y = Rating,
+                   col = Player,
+                   group = Player)) +
+            labs(title = "Elo Timeline", 
+                 x = "Time", y = "Rating") +
+            scale_x_discrete(labels = NULL) +
+            ylim(1500,2100) +
+            geom_hline(yintercept = c(1600, 1700, 1800, 1900, 2000, 2100), col = "grey", lty = 2) +
+            geom_line(lwd = 1)
+            #geom_smooth(lty = 2, lwd = 0.2, col = "red")
+        
     })
 }
 
