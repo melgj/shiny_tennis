@@ -67,7 +67,7 @@ ui <- fluidPage(
     theme = shinytheme("cerulean"),
 
     titlePanel(
-        h1("Tennis Head-to-Head", align = "left")),
+        ("Tennis Head-to-Head")),
     
     sidebarLayout(
         sidebarPanel(
@@ -75,9 +75,9 @@ ui <- fluidPage(
                                start = "2000-01-01", end = End_Date),
                 h4("Select Players"),
                 selectInput(inputId = "player1", label = "Player 1", 
-                            choices = playerList, selected = playerList[[1]]),
+                            choices = playerList, selected = playerList[[9]]),
                 selectInput(inputId = "player2", label = "Player 2", 
-                            choices = playerList, selected = playerList[[2]]),
+                            choices = playerList, selected = playerList[[10]]),
                 h4("Elo Timeline"),
                 plotOutput("tPlot"),
                 h4("Calculate Elo Win Probabilities"),
