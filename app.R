@@ -67,12 +67,15 @@ ui <- fluidPage(
                 actionButton("winProb", "CALCULATE"),
                 tableOutput("preds")),
         mainPanel(
-            column(10,
-                   tableOutput("winLoss")
-            ),
-            column(10,
-                   dataTableOutput("h2h")))
-    )
+            tableOutput("winLoss"),
+            fluidRow(
+            column(8,
+            dataTableOutput("h2h"))
+            )
+        )
+    ),
+    
+    tags$footer(h6("Match data sourced from Jeff Sackmann Tennis Abstract https://github.com/JeffSackmann"))
 )
 
 
@@ -104,16 +107,7 @@ server <- function(input, output) {
         
         matchPred <- tibble(Player = c(input$player1, input$player2),
                                 `Win Probability` = c(round(predProb, 2), round(1 - predProb, 2)))
-    
-                # p1Elo <- round(ratings$Rating[ratings$Player == input$player1],2)
-                # p2Elo <- round(ratings$Rating[ratings$Player == input$player2],2)
-                # 
-                # p1Prob <- probP1(p1Elo, p2Elo)
-                # p2Prob <- 1 - p1Prob
-                # 
-                # probTable <- data.table(Player = c(input$player1, input$player2),
-                #                         `Elo Rating` = c(p1Elo, p2Elo),
-                #                         `Win Probability` = c(p1Prob, p2Prob))
+                
     })
     
     output$preds <- renderTable({
