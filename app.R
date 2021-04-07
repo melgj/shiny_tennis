@@ -79,8 +79,7 @@ ui <- fluidPage(
         mainPanel(
             tableOutput("winLoss"),
             fluidRow(
-            column(8,
-            dataTableOutput("h2h"))
+            DT::dataTableOutput("h2h", width = "100%")
             )
         )
     ),
@@ -101,7 +100,8 @@ server <- function(input, output) {
             arrange(desc(Wins))
         
     })
-    output$h2h <- renderDataTable({
+    
+    output$h2h <- DT::renderDataTable({
         matches %>% dplyr::filter((Winner == input$player1 & Loser == input$player2) |
                                       (Loser == input$player1 & Winner == input$player2)) %>% 
             dplyr::filter(dplyr::between(`Event Date`, input$dates[1], input$dates[2]))
@@ -113,8 +113,6 @@ server <- function(input, output) {
         matchup <- tibble(Time = 1,
                            Player1 = input$player1,
                            Player2 = input$player2)
-        
-        #predProb <- predict(sElo, matchup, trat = c(1500, 300), gamma = 0)
         
         plyr1Elo <- atpRatings$Rating[atpRatings$Player == input$player1]
         plyr2Elo <- atpRatings$Rating[atpRatings$Player == input$player2]
@@ -142,9 +140,8 @@ server <- function(input, output) {
             ylim(1500,2100) +
             geom_hline(yintercept = c(1600, 1700, 1800, 1900, 2000, 2100), col = "grey", lty = 2) +
             geom_line(lwd = 1)
-            #geom_smooth(lty = 2, lwd = 0.2, col = "red")
-        
     })
+    
 }
 
 # Run the application 
