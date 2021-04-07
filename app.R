@@ -109,7 +109,6 @@ server <- function(input, output) {
     })
     
     data <- eventReactive(input$winProb,{
-        
         matchup <- tibble(Time = 1,
                            Player1 = input$player1,
                            Player2 = input$player2)
@@ -121,7 +120,6 @@ server <- function(input, output) {
         matchPred <- tibble(Player = c(input$player1, input$player2),
                             Elo = c(plyr1Elo, plyr2Elo),
                             `Win Probability` = c(plyr1Prob, 1 - plyr1Prob))
-                
     })
     
     output$preds <- renderTable({
