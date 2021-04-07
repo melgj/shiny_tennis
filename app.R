@@ -1,4 +1,3 @@
-
 library(shiny)
 library(shinythemes)
 library(dplyr)
@@ -9,8 +8,14 @@ library(reshape2)
 library(ggplot2)
 library(plotly)
 
+atpHistory <- read_csv("atp_shiny_timeline_2021-04-07.csv", col_names = T)
+atpRatings <- read_csv("atp_SR_ratings_2021-04-07.csv", col_names = T)
+matches <- read_csv("atp_shiny_matches_2021-04-07.csv", col_names = TRUE)
 
-matches <- read_csv("atp_matches.csv")
+atpHistory
+atpRatings$Rating <- round(atpRatings$Rating, 2)
+atpRatings$Rating
+
 matches$tourney_date <- lubridate::ymd(matches$tourney_date)
 matches$Year <- lubridate::year(matches$tourney_date)
 
@@ -33,33 +38,21 @@ matches <- matches %>%
     dplyr::arrange(desc(`Event Date`), desc(Round))
 
 Base_Date <- min(matches$`Event Date`)
-End_Date <- max(matches$`Event Date`)
+End_Date <- Sys.Date()
 
-match_hist <- matches %>% 
-    mutate(Period = lubridate::interval(Base_Date, matches$`Event Date`) %/% weeks(1)+1,
-           Result = 1) %>% 
-    arrange(`Event Date`, Round) %>% 
-    select(Period, Winner, Loser, Result)
-
-sElo <- steph(match_hist, init = c(1500,300), history = TRUE)
-
-ratings <- as_tibble(sElo$ratings) %>% 
-    filter(Lag <= 25, Rating >= 1500, Games >= 30) %>% 
-    arrange(Player)
-
-playerList <- ratings$Player
+playerList <- unique(atpHistory$Player)
 
 # Elo Player Timeline for plotting
 
-timeline <- as_tibble(sElo$history, rownames = "Player")
-
-timeline <- timeline %>% 
-    filter(Player %in% playerList) %>% 
-    select(Player, ends_with("Rating")) %>% 
-    select(Player, last_col(offset = 99):last_col())
-
-eloTl <- melt(timeline, id.vars = "Player",variable.name = "Time", 
+eloTimeline <- melt(atpHistory, id.vars = "Player",variable.name = "Time", 
              value.name = "Rating")
+
+# Elo Win Probability Function
+
+probP1 <- function(p1_rtng, p2_rtng){
+    dij <- p2_rtng - p1_rtng
+    return(1 / (1 + 10 ^ (dij/400)))
+}
 
 # Build UI
 
@@ -72,17 +65,17 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
                 dateRangeInput("dates", h4("Date Range Head-to-Head"),
-                               start = "2000-01-01", end = End_Date),
+                               start = Base_Date, end = End_Date),
                 h4("Select Players"),
                 selectInput(inputId = "player1", label = "Player 1", 
-                            choices = playerList, selected = playerList[[9]]),
+                            choices = playerList, selected = "Rafael Nadal"),
                 selectInput(inputId = "player2", label = "Player 2", 
-                            choices = playerList, selected = playerList[[10]]),
-                h4("Elo Timeline"),
-                plotOutput("tPlot"),
+                            choices = playerList, selected = "Novak Djokovic"),
                 h4("Calculate Elo Win Probabilities"),
                 actionButton("winProb", "CALCULATE"),
-                tableOutput("preds")),
+                tableOutput("preds"),
+                h4("Elo Timeline"),
+                plotOutput("tPlot")),
         mainPanel(
             tableOutput("winLoss"),
             fluidRow(
@@ -121,14 +114,15 @@ server <- function(input, output) {
                            Player1 = input$player1,
                            Player2 = input$player2)
         
-        predProb <- predict(sElo, matchup, trat = c(1500, 300), gamma = 0)
+        #predProb <- predict(sElo, matchup, trat = c(1500, 300), gamma = 0)
         
-        plyr1Elo <- ratings$Rating[ratings$Player == input$player1]
-        plyr2Elo <- ratings$Rating[ratings$Player == input$player2]
+        plyr1Elo <- atpRatings$Rating[atpRatings$Player == input$player1]
+        plyr2Elo <- atpRatings$Rating[atpRatings$Player == input$player2]
+        plyr1Prob <- probP1(plyr1Elo, plyr2Elo)
         
         matchPred <- tibble(Player = c(input$player1, input$player2),
                             Elo = c(plyr1Elo, plyr2Elo),
-                            `Win Probability` = c(round(predProb, 2), round(1 - predProb, 2)))
+                            `Win Probability` = c(plyr1Prob, 1 - plyr1Prob))
                 
     })
     
@@ -137,7 +131,7 @@ server <- function(input, output) {
     })
     
     output$tPlot <- renderPlot({
-        eloTl %>% filter(Player %in% c(input$player1, input$player2)) %>% 
+        eloTimeline %>% filter(Player %in% c(input$player1, input$player2)) %>% 
             ggplot(aes(x = Time,
                    y = Rating,
                    col = Player,
