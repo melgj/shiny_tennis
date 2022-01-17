@@ -8,9 +8,9 @@ library(ggplot2)
 
 
 
-atpHistory <- read_csv("atp_shiny_timeline_2021-09-15.csv", col_names = T)
-atpRatings <- read_csv("atp_SR_ratings_2021-09-15.csv", col_names = T)
-matches <- read_csv("atp_shiny_matches_2021-09-15.csv", col_names = TRUE)
+atpHistory <- read_csv("~/atp/atp_shiny_timeline.csv", col_names = T)
+atpRatings <- read_csv("~/atp/atp_SR_ratings.csv", col_names = T)
+matches <- read_csv("~/atp/atp_shiny_matches.csv", col_names = TRUE)
 
 atpHistory
 atpRatings$Rating <- round(atpRatings$Rating, 2)
